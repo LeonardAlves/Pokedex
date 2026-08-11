@@ -10,4 +10,8 @@ router.get("/", pokemonController.index);
 
 router.get("/:id", pokemonController.show);
 
+router.put("/:id", pokemonController.update);
+
+router.delete("/:id", pokemonController.delete);
+
 module.exports = router;
