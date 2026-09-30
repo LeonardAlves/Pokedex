@@ -37,7 +37,7 @@ class PokemonController {
             return res.status(200).json(pokemon);
         } catch (error) {
             return res.status(500).json({
-                error: error.message
+               error: error.message
             });
         }
     }
@@ -77,7 +77,30 @@ class PokemonController {
             });
         }
     }
-        
+
+    async import(req, res) {
+
+        console.log("Entreou no import");
+        try {
+            for (const pokemonData of req.body) {
+                await Pokemon.findOneAndUpdate(
+                    { number: pokemonData.number },
+                    pokemonData,
+                    { upsert: true, new: true }
+                );
+            
+            }
+
+            return res.status(201).json({
+                message: "Pokemons imported successfully"
+            });
+
+        } catch (error) {
+            return res.status(500).json({
+                error: error.message
+            });
+        }
+    }
 }
 
 module.exports = new PokemonController();

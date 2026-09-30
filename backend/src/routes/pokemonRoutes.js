@@ -4,6 +4,8 @@ const router = express.Router();
 
 const pokemonController = require("../controllers/pokemonController");
 
+router.post("/import",pokemonController.import);
+
 router.post("/", pokemonController.create);
 
 router.get("/", pokemonController.index);

@@ -33,5 +33,17 @@ services:
     depends_on:
       - mongodb
 
+  n8n:
+    image: n8nio/n8n
+    container_name: pokedex-n8n
+    restart: always
+
+    ports:
+      - "5678:5678"
+
+    volumes:
+      - n8n-data:/home/node/.n8n
+
 volumes:
   mongo-data:
+  n8n-data:
