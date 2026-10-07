@@ -1,61 +1,49 @@
+const mongoose = require("mongoose");
 const Pokemon = require("../models/Pokemon");
+const AppError = require("../errors/AppError");
 
 class PokemonController {
 
-    async create(req, res) {
+    async create(req, res, next) {
         try {
             const pokemon = await Pokemon.create(req.body);
             return res.status(201).json(pokemon);
-
         } catch (error) {
-            return res.status(400).json({
-                 error: error.message 
-                });
+            next(error);
         }
     }
 
-    async index(req, res) {
+    async index(req, res, next) {
         try {
-            // 1. Lê os parâmetros da URL (ex: ?search=char&type=fire&page=2&limit=20)
             const { search, type, favorite } = req.query;
 
-            // 2. Lê page e limit (chegam como texto, então convertemos para número)
-            //    Se não vierem ou forem inválidos, usamos os padrões: página 1, 20 por página
             const page = Math.max(parseInt(req.query.page) || 1, 1);
             const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
 
-            // 3. Começa com um filtro vazio, que significa "traga tudo"
             const filter = {};
 
-            // 4. Condição de nome (igual a antes)
             if (search) {
                 const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
                 filter.name = { $regex: escaped, $options: "i" };
             }
 
-            // 5. Condição de tipo (igual a antes)
             if (type) {
                 filter.types = type.toLowerCase();
             }
 
-            // 6. Condição de favorito (igual a antes)
             if (favorite === "true") {
                 filter.favorite = true;
             } else if (favorite === "false") {
                 filter.favorite = false;
             }
 
-            // 7. Conta quantos Pokémon existem COM os filtros aplicados (NOVO)
             const total = await Pokemon.countDocuments(filter);
 
-            // 8. Busca só a página pedida (NOVO: skip e limit)
             const pokemons = await Pokemon.find(filter)
                 .sort({ number: 1 })
                 .skip((page - 1) * limit)
                 .limit(limit);
 
-            // 9. Devolve um objeto com os dados e as informações de paginação (NOVO)
             return res.status(200).json({
                 data: pokemons,
                 page,
@@ -64,86 +52,126 @@ class PokemonController {
                 totalPages: Math.ceil(total / limit)
             });
         } catch (error) {
-            return res.status(500).json({
-                error: error.message
-            });
+            next(error);
         }
     }
 
-    async show(req, res) {
+    async show(req, res, next) {
         try {
             const { id } = req.params;
+
+            if (!mongoose.isValidObjectId(id)) {
+                throw new AppError("Invalid id", 400);
+            }
+
             const pokemon = await Pokemon.findById(id);
             if (!pokemon) {
-                return res.status(404).json({
-                    error: "Pokemon not found"
-                });
+                throw new AppError("Pokemon not found", 404);
             }
+
             return res.status(200).json(pokemon);
         } catch (error) {
-            return res.status(500).json({
-               error: error.message
-            });
+            next(error);
         }
     }
 
-    async update(req, res) {
+    async update(req, res, next) {
         try {
             const { id } = req.params;
-            const pokemon = await Pokemon.findByIdAndUpdate(id, req.body, { new: true });
-            if (!pokemon) {
-                return res.status(404).json({
-                    error: "Pokemon not found"
-                });
+
+            if (!mongoose.isValidObjectId(id)) {
+                throw new AppError("Invalid id", 400);
             }
+
+            const pokemon = await Pokemon.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+            if (!pokemon) {
+                throw new AppError("Pokemon not found", 404);
+            }
+
             return res.status(200).json(pokemon);
         } catch (error) {
-            return res.status(500).json({
-                error: error.message
-            });
+            next(error);
         }
     }
 
-    async delete(req, res) {
+    async toggleFavorite(req, res, next) {
         try {
             const { id } = req.params;
-        const pokemon = await Pokemon.findByIdAndDelete(id);
-            if (!pokemon) {
-                return res.status(404).json({
-                    error: "Pokemon not found"
-                });
+
+            if (!mongoose.isValidObjectId(id)) {
+                throw new AppError("Invalid id", 400);
             }
+
+            const pokemon = await Pokemon.findById(id);
+            if (!pokemon) {
+                throw new AppError("Pokemon not found", 404);
+            }
+
+            pokemon.favorite = !pokemon.favorite;
+            await pokemon.save();
+
+            return res.status(200).json(pokemon);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async delete(req, res, next) {
+        try {
+            const { id } = req.params;
+
+            if (!mongoose.isValidObjectId(id)) {
+                throw new AppError("Invalid id", 400);
+            }
+
+            const pokemon = await Pokemon.findByIdAndDelete(id);
+            if (!pokemon) {
+                throw new AppError("Pokemon not found", 404);
+            }
+
             return res.status(200).json({
                 message: "Pokemon deleted successfully"
             });
         } catch (error) {
-            return res.status(500).json({
-                error: error.message
-            });
+            next(error);
         }
     }
 
-    async import(req, res) {
+    async import(req, res, next) {
 
-        console.log("Entrou no import");
+        console.log("Entreou no import");
         try {
-            for (const pokemonData of req.body) {
-                await Pokemon.findOneAndUpdate(
-                    { number: pokemonData.number },
-                    pokemonData,
-                    { upsert: true, new: true }
-                );
-            
+            if (!Array.isArray(req.body) || req.body.length === 0) {
+                throw new AppError("Body must be a non-empty array of pokemons", 400);
             }
 
-            return res.status(201).json({
-                message: "Pokemons imported successfully"
+                        const operations = req.body.map((pokemonData) => {
+                // Separa o "favorite" dos demais campos
+                const { favorite, ...fields } = pokemonData;
+
+                return {
+                    updateOne: {
+                        filter: { number: pokemonData.number },
+                        update: {
+                            // Sempre atualiza os dados vindos da PokeAPI
+                            $set: fields,
+                            // "favorite" só é definido quando o Pokémon é CRIADO
+                            $setOnInsert: { favorite: false }
+                        },
+                        upsert: true
+                    }
+                };
             });
 
-        } catch (error) {
-            return res.status(500).json({
-                error: error.message
+            const result = await Pokemon.bulkWrite(operations);
+
+            return res.status(201).json({
+                message: "Pokemons imported successfully",
+                created: result.upsertedCount,
+                updated: result.modifiedCount
             });
+        } catch (error) {
+            next(error);
         }
     }
 }

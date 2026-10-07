@@ -14,6 +14,8 @@ router.get("/:id", pokemonController.show);
 
 router.put("/:id", pokemonController.update);
 
+router.patch("/:id/favorite", pokemonController.toggleFavorite);
+
 router.delete("/:id", pokemonController.delete);
 
 module.exports = router;
