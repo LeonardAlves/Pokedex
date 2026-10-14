@@ -83,7 +83,7 @@ class PokemonController {
                 throw new AppError("Invalid id", 400);
             }
 
-            const pokemon = await Pokemon.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+            const pokemon = await Pokemon.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });   // <-- ESTA LINHA
             if (!pokemon) {
                 throw new AppError("Pokemon not found", 404);
             }
@@ -139,7 +139,7 @@ class PokemonController {
 
     async import(req, res, next) {
 
-        console.log("Entreou no import");
+        console.log("Entrou no import");
         try {
             if (!Array.isArray(req.body) || req.body.length === 0) {
                 throw new AppError("Body must be a non-empty array of pokemons", 400);

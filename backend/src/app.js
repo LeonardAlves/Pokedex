@@ -1,10 +1,14 @@
 const express = require("express");
+const cors = require("cors");
 
 const pokemonRoutes = require("./routes/pokemonRoutes");
 const errorHandler = require("./middlewares/errorHandler");
 const AppError = require("./errors/AppError");
 
 const app = express();
+
+// Só aceita requisições do navegador vindas do frontend configurado
+app.use(cors({ origin: process.env.CORS_ORIGIN }));
 
 app.use(express.json());
 

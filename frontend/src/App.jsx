@@ -1,122 +1,83 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import { getPokemons } from "./services/api";
+import PokemonList from "./components/PokemonList";
+import SearchBar from "./components/SearchBar";
+import TypeFilter from "./components/TypeFilter";
+import Pagination from "./components/Pagination";
+import useDebounce from "./hooks/useDebounce";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [pokemons, setPokemons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+
+  const [type, setType] = useState("");
+
+  // NOVO: página atual e total de páginas (vem da API)
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // NOVO: ao mudar a busca, volta para a página 1
+  function handleSearchChange(value) {
+    setSearch(value);
+    setPage(1);
+  }
+
+  // NOVO: ao mudar o tipo, volta para a página 1
+  function handleTypeChange(value) {
+    setType(value);
+    setPage(1);
+  }
+
+  useEffect(() => {
+    let ignore = false;
+
+    setLoading(true);
+    setError(null);
+
+    getPokemons({ limit: 20, page, search: debouncedSearch, type })
+      .then((data) => {
+        if (!ignore) {
+          setPokemons(data.data);
+          setTotalPages(data.totalPages);
+        }
+      })
+      .catch((err) => {
+        if (!ignore) setError(err.message);
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [debouncedSearch, type, page]);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <main style={{ maxWidth: 1000, margin: "0 auto", padding: 16 }}>
+      <h1>Pokédex</h1>
 
-      <div className="ticks"></div>
+      <SearchBar value={search} onChange={handleSearchChange} />
+      <TypeFilter selected={type} onSelect={handleTypeChange} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      {loading && <p>Carregando...</p>}
+      {error && <p>Erro: {error}</p>}
+      {!loading && !error && (
+        <>
+          <PokemonList pokemons={pokemons} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
+        </>
+      )}
+    </main>
+  );
 }
 
-export default App
+export default App;
