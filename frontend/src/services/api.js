@@ -1,7 +1,17 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
-export async function getPokemons(params = {}) {
-  // Monta a query string: { page: 1, type: "fire" } vira "page=1&type=fire"
+async function request(path, options) {
+  const response = await fetch(`${API_URL}${path}`, options);
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || "Erro ao comunicar com a API");
+  }
+
+  return response.json();
+}
+
+export function getPokemons(params = {}) {
   const query = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
@@ -10,12 +20,14 @@ export async function getPokemons(params = {}) {
     }
   });
 
-  const response = await fetch(`${API_URL}/pokemon?${query.toString()}`);
+  return request(`/pokemon?${query.toString()}`);
+}
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || "Erro ao buscar Pokémon");
-  }
+export function getPokemonById(id) {
+  return request(`/pokemon/${id}`);
+}
 
-  return response.json();
+// NOVO: inverte o favorito e devolve o Pokémon atualizado
+export function toggleFavorite(id) {
+  return request(`/pokemon/${id}/favorite`, { method: "PATCH" });
 }

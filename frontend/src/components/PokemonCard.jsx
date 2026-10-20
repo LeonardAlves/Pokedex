@@ -1,12 +1,30 @@
+import { Link } from "react-router-dom";
 import "./PokemonCard.css";
 
-function PokemonCard({ pokemon }) {
-  // Deixa o número com 3 dígitos: 1 vira "#001"
+function PokemonCard({ pokemon, onToggleFavorite }) {
   const formattedNumber = `#${String(pokemon.number).padStart(3, "0")}`;
 
+  function handleFavoriteClick(event) {
+    // Impede que o clique no coração abra a página de detalhes
+    event.preventDefault();
+    event.stopPropagation();
+    onToggleFavorite(pokemon._id);
+  }
+
   return (
-    <article className="pokemon-card">
+    <Link className="pokemon-card" to={`/pokemon/${pokemon._id}`}>
       <span className="pokemon-card__number">{formattedNumber}</span>
+
+      <button
+        type="button"
+        className="pokemon-card__favorite"
+        onClick={handleFavoriteClick}
+        aria-label={
+          pokemon.favorite ? "Desfavoritar Pokémon" : "Favoritar Pokémon"
+        }
+      >
+        {pokemon.favorite ? "❤️" : "🤍"}
+      </button>
 
       <img
         className="pokemon-card__image"
@@ -24,7 +42,7 @@ function PokemonCard({ pokemon }) {
           </span>
         ))}
       </div>
-    </article>
+    </Link>
   );
 }
 
