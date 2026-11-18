@@ -4,19 +4,21 @@ import PokemonDetails from "./pages/PokemonDetails";
 
 function App() {
   return (
-    <main style={{ maxWidth: 1000, margin: "0 auto", padding: 16 }}>
-      <h1>
-        <Link to="/" style={{ color: "inherit", textDecoration: "none" }}>
+    <>
+      <header className="app-header">
+        <Link to="/" className="app-header__title">
           Pokédex
         </Link>
-      </h1>
+      </header>
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/pokemon/:id" element={<PokemonDetails />} />
-        <Route path="*" element={<p>Página não encontrada.</p>} />
-      </Routes>
-    </main>
+      <main className="app-main">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/pokemon/:id" element={<PokemonDetails />} />
+          <Route path="*" element={<p>Página não encontrada.</p>} />
+        </Routes>
+      </main>
+    </>
   );
 }
 

@@ -40,14 +40,6 @@
   flex-wrap: wrap;
 }
 
-.pokemon-card__type {
-  background: #e8e8e8;
-  border-radius: 999px;
-  padding: 2px 10px;
-  font-size: 0.8rem;
-  text-transform: capitalize;
-}
-
 .pokemon-card {
   position: relative;
 }
@@ -65,4 +57,8 @@
 
 .pokemon-card__favorite:hover {
   transform: scale(1.2);
+}
+
+.pokemon-card {
+  border-top: 4px solid var(--type-color, #ddd);
 }

@@ -1,10 +1,24 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { TYPE_COLORS } from "../constants/types";
+import TypeBadge from "../components/TypeBadge";
 import { getPokemonById, toggleFavorite } from "../services/api";
 import "./PokemonDetails.css";
 
 function PokemonDetails() {
   const { id } = useParams();
+
+    const navigate = useNavigate();
+  const location = useLocation();
+
+  function handleBack() {
+    // "default" = a página foi aberta direto (F5 ou link), sem histórico dentro do app
+    if (location.key !== "default") {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  }
 
   const [pokemon, setPokemon] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,15 +57,18 @@ function PokemonDetails() {
 
   return (
     <section className="details">
-      <Link to="/" className="details__back">
+            <button type="button" className="details__back" onClick={handleBack}>
         ← Voltar
-      </Link>
+      </button>
 
       {loading && <p>Carregando...</p>}
       {error && <p>Erro: {error}</p>}
 
       {pokemon && !loading && (
-        <article className="details__card">
+          <article
+          className="details__card"
+          style={{ "--type-color": TYPE_COLORS[pokemon.types[0]] || "#ddd" }}
+        >
           <span className="details__number">
             #{String(pokemon.number).padStart(3, "0")}
           </span>
@@ -66,9 +83,7 @@ function PokemonDetails() {
 
           <div className="details__types">
             {pokemon.types.map((type) => (
-              <span key={type} className="details__type">
-                {type}
-              </span>
+              <TypeBadge key={type} type={type} />
             ))}
           </div>
 

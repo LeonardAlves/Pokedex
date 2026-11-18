@@ -1,18 +1,26 @@
 import { Link } from "react-router-dom";
+import { TYPE_COLORS } from "../constants/types";
+import TypeBadge from "./TypeBadge";
 import "./PokemonCard.css";
 
 function PokemonCard({ pokemon, onToggleFavorite }) {
   const formattedNumber = `#${String(pokemon.number).padStart(3, "0")}`;
 
+  // A cor do primeiro tipo define a borda superior do card
+  const mainColor = TYPE_COLORS[pokemon.types[0]] || "#ddd";
+
   function handleFavoriteClick(event) {
-    // Impede que o clique no coração abra a página de detalhes
     event.preventDefault();
     event.stopPropagation();
     onToggleFavorite(pokemon._id);
   }
 
   return (
-    <Link className="pokemon-card" to={`/pokemon/${pokemon._id}`}>
+    <Link
+      className="pokemon-card"
+      to={`/pokemon/${pokemon._id}`}
+      style={{ "--type-color": mainColor }}
+    >
       <span className="pokemon-card__number">{formattedNumber}</span>
 
       <button
@@ -37,9 +45,7 @@ function PokemonCard({ pokemon, onToggleFavorite }) {
 
       <div className="pokemon-card__types">
         {pokemon.types.map((type) => (
-          <span key={type} className="pokemon-card__type">
-            {type}
-          </span>
+          <TypeBadge key={type} type={type} />
         ))}
       </div>
     </Link>
